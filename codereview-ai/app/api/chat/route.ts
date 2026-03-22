@@ -61,13 +61,68 @@
 
 
 
-import OpenAI from "openai";
+// import OpenAI from "openai";
+// import { NextRequest, NextResponse } from "next/server";
+// import { getSystemPrompt } from "@/lib/prompts";
+
+// const openai = new OpenAI({
+//   apiKey: process.env.OPENAI_API_KEY,
+// });
+
+// export async function POST(req: NextRequest) {
+//   try {
+//     const body = await req.json();
+//     const { messages, explanationLevel = "beginner" } = body;
+
+//     if (!messages || !Array.isArray(messages)) {
+//       return NextResponse.json(
+//         { error: "Invalid messages format" },
+//         { status: 400 }
+//       );
+//     }
+
+//     if (!process.env.OPENAI_API_KEY) {
+//       return NextResponse.json(
+//         { error: "OpenAI API key not configured" },
+//         { status: 500 }
+//       );
+//     }
+
+//     const systemPrompt = getSystemPrompt(explanationLevel);
+
+//     // 🧠 Convert messages to OpenAI format
+//     const formattedMessages = [
+//       { role: "system", content: systemPrompt },
+//       ...messages,
+//     ];
+
+//     const response = await openai.chat.completions.create({
+//       model: "gpt-4o-mini", // ✅ cheap + fast
+//       messages: formattedMessages,
+//       max_tokens: 1000,
+//     });
+
+//     return NextResponse.json({
+//       content: response.choices[0].message.content,
+//     });
+
+//   } catch (error: any) {
+//     console.error("API Error:", error);
+
+//     return NextResponse.json(
+//       { error: error.message || "Failed to process request" },
+//       { status: 500 }
+//     );
+//   }
+// }
+
+
+
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import { NextRequest, NextResponse } from "next/server";
 import { getSystemPrompt } from "@/lib/prompts";
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
 export async function POST(req: NextRequest) {
   try {
@@ -81,29 +136,39 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if (!process.env.OPENAI_API_KEY) {
+    if (!process.env.GEMINI_API_KEY) {
       return NextResponse.json(
-        { error: "OpenAI API key not configured" },
+        { error: "Gemini API key not configured" },
         { status: 500 }
       );
     }
 
     const systemPrompt = getSystemPrompt(explanationLevel);
 
-    // 🧠 Convert messages to OpenAI format
-    const formattedMessages = [
-      { role: "system", content: systemPrompt },
-      ...messages,
-    ];
+    // 🧠 Convert chat messages
+    const chatHistory = messages
+      .map((msg: any) => `${msg.role}: ${msg.content}`)
+      .join("\n");
 
-    const response = await openai.chat.completions.create({
-      model: "gpt-4o-mini", // ✅ cheap + fast
-      messages: formattedMessages,
-      max_tokens: 1000,
+    const finalPrompt = `
+${systemPrompt}
+
+Conversation:
+${chatHistory}
+
+Assistant:
+`;
+
+    const model = genAI.getGenerativeModel({
+      model: "gemini-2.5-flash", // 🔥 YOUR MODEL
     });
 
+    const result = await model.generateContent(finalPrompt);
+    const response = result.response;
+    const text = response.text();
+
     return NextResponse.json({
-      content: response.choices[0].message.content,
+      content: text,
     });
 
   } catch (error: any) {
