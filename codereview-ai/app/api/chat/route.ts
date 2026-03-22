@@ -130,16 +130,22 @@ export async function POST(req: NextRequest) {
     const { messages, explanationLevel = "beginner" } = body;
 
     if (!messages || !Array.isArray(messages)) {
-      return NextResponse.json(
-        { error: "Invalid messages format" },
-        { status: 400 }
+      return new Response(
+        JSON.stringify({ error: "Invalid messages format" }),
+        { 
+          status: 400,
+          headers: { "Content-Type": "application/json" }
+        }
       );
     }
 
     if (!process.env.GEMINI_API_KEY) {
-      return NextResponse.json(
-        { error: "Gemini API key not configured" },
-        { status: 500 }
+      return new Response(
+        JSON.stringify({ error: "Gemini API key not configured" }),
+        { 
+          status: 500,
+          headers: { "Content-Type": "application/json" }
+        }
       );
     }
 
@@ -163,20 +169,49 @@ Assistant:
       model: "gemini-2.5-flash", // 🔥 YOUR MODEL
     });
 
-    const result = await model.generateContent(finalPrompt);
-    const response = result.response;
-    const text = response.text();
+    // 🔥 STREAMING ENABLED HERE
+    const result = await model.generateContentStream(finalPrompt);
 
-    return NextResponse.json({
-      content: text,
+    // const result = await model.generateContent(finalPrompt);
+    // const response = result.response;
+    // const text = response.text();
+
+    // return NextResponse.json({
+    //   content: text,
+    // });
+
+    // Create a readable stream
+    const encoder = new TextEncoder();
+    const stream = new ReadableStream({
+      async start(controller) {
+        try {
+          for await (const chunk of result.stream) {
+            const text = chunk.text();
+            controller.enqueue(encoder.encode(text));
+          }
+          controller.close();
+        } catch (error) {
+          controller.error(error);
+        }
+      },
+    });
+
+    return new Response(stream, {
+      headers: {
+        "Content-Type": "text/plain; charset=utf-8",
+        "Transfer-Encoding": "chunked",
+      },
     });
 
   } catch (error: any) {
     console.error("API Error:", error);
 
-    return NextResponse.json(
-      { error: error.message || "Failed to process request" },
-      { status: 500 }
+    return new Response(
+      JSON.stringify({ error: error.message || "Failed to process request" }),
+      { 
+        status: 500,
+        headers: { "Content-Type": "application/json" }
+      }
     );
   }
 }

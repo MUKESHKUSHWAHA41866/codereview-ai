@@ -1,6 +1,57 @@
 # 🤖 CodeReview AI
 
+
+
 > Your friendly AI code review assistant built with Next.js 14 and Claude Sonnet 4.5
+
+┌─────────────────────────────────────────────────────────────┐
+│                         USER INTERFACE                       │
+│  (Next.js App Router - app/page.tsx)                        │
+└─────────────────────────────────────────────────────────────┘
+                           ↓ ↑
+┌─────────────────────────────────────────────────────────────┐
+│                    CHAT COMPONENT LAYER                      │
+│  - ChatContainer (manages state)                            │
+│  - MessageList (renders messages)                           │
+│  - ChatInput (handles user input)                           │
+│  - CodeBlock (syntax highlighting)                          │
+└─────────────────────────────────────────────────────────────┘
+                           ↓ ↑
+┌─────────────────────────────────────────────────────────────┐
+│                      STATE MANAGEMENT                        │
+│  - useChat hook (message history, loading states)           │
+│  - Settings Context (beginner/detailed mode)                │
+└─────────────────────────────────────────────────────────────┘
+                           ↓ ↑
+┌─────────────────────────────────────────────────────────────┐
+│                         API LAYER                            │
+│  app/api/chat/route.ts                                      │
+│  - Receives messages                                         │
+│  - Calls Claude API                                          │
+│  - Streams response back                                     │
+└─────────────────────────────────────────────────────────────┘
+                           ↓ ↑
+┌─────────────────────────────────────────────────────────────┐
+│                      Gemini API                              │
+│  (Gemini Messages API with streaming)                        │
+└───────────────────────────────────────────────────────── ────┘
+
+
+1. USER TYPES MESSAGE
+   ↓
+2. ChatInput → useChat hook
+   ↓
+3. Optimistic UI update (show user message immediately)
+   ↓
+4. POST to /api/chat with message + history
+   ↓
+5. API Route constructs system prompt + user context
+   ↓
+6. Stream response from gemini API
+   ↓
+7. Parse stream chunks → update UI in real-time
+   ↓
+8. Display formatted response with syntax highlighting
 
 ![CodeReview AI](https://img.shields.io/badge/AI-Claude%20Sonnet%204.5-blueviolet)
 ![Next.js](https://img.shields.io/badge/Next.js-14-black)
@@ -45,7 +96,7 @@ I chose code review because:
 ```
 Frontend:     Next.js 14 (App Router) + TypeScript
 Styling:      Tailwind CSS
-AI Model:     Claude Sonnet 4.5 (Anthropic API)
+AI Model:     gemini-2.5-flash (Google Generative AI)
 Syntax:       react-syntax-highlighter
 Icons:        lucide-react
 Deployment:   Vercel
@@ -91,7 +142,7 @@ codereview-ai/
 ### Prerequisites
 
 - Node.js 18+ installed
-- Anthropic API key ([Get one here](https://console.anthropic.com/))
+- Gemini  API key ([Get one here]())
 
 ### Installation
 
@@ -113,7 +164,7 @@ cp .env.example .env.local
 
 Edit `.env.local` and add your API key:
 ```
-ANTHROPIC_API_KEY=your_actual_api_key_here
+GEMINI_API_KEY=your_actual_api_key_here
 ```
 
 4. **Run the development server**
@@ -133,7 +184,7 @@ Navigate to [http://localhost:3000](http://localhost:3000)
 3. Click "New Project"
 4. Import your GitHub repository
 5. Add environment variable:
-   - Key: `ANTHROPIC_API_KEY`
+   - Key: `GEMINI_API_KEY`
    - Value: Your API key
 6. Click "Deploy"
 
@@ -147,7 +198,7 @@ npm i -g vercel
 vercel
 
 # Add environment variable
-vercel env add ANTHROPIC_API_KEY
+vercel env add GEMINI_API_KEY
 
 # Deploy to production
 vercel --prod
@@ -174,10 +225,12 @@ vercel --prod
 
 ## 💡 Key Decisions
 
-### Why Claude API over OpenAI?
-- Better code understanding and analysis
-- Superior explanations for teaching/learning
-- More nuanced feedback
+### Why Gemini over Claude/OpenAI?
+
+- Faster response time (Gemini 2.5 Flash)
+- Cost-effective for production usage
+- Simplified integration for this project
+- Flexibility to switch models easily
 
 ### Why Two Explanation Modes?
 - Real user research: Beginners need different language than experts
@@ -195,15 +248,7 @@ vercel --prod
 - **Quick actions**: Reduces friction, guides users
 - **Copy buttons on code**: Developers expect this
 
-## 🎥 Loom Video
-
-[Link to Loom video walkthrough - TO BE ADDED]
-
-In the video, I demonstrate:
-- How I planned the project with AI
-- My prompting strategy and iteration process
-- Code review and quality checks
-- Live demo of the deployed application
+ 
 
 ## 🐛 Known Limitations
 
@@ -233,3 +278,4 @@ Built by [Your Name] for Thinkly Labs Software Engineering Role
 ---
 
 **Feedback?** I'd love to hear your thoughts on the code, UX, or AI usage! 🚀
+The AI provider layer is abstracted, allowing easy switching between providers (Claude, OpenAI, Gemini).

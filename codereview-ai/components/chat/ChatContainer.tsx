@@ -8,7 +8,7 @@ import { EmptyState } from "../EmptyState";
 import { AlertCircle } from "lucide-react";
 
 export function ChatContainer() {
-  const { messages, isLoading, error, sendMessage } = useChat();
+  const { messages, isLoading , streamingContent , error, sendMessage } = useChat();
 
   const handleSend = (content: string) => {
     sendMessage(content);
@@ -37,7 +37,7 @@ export function ChatContainer() {
       {messages.length === 0 ? (
         <EmptyState onQuickAction={handleSend} />
       ) : (
-        <MessageList messages={messages} isLoading={isLoading} />
+        <MessageList messages={messages} isLoading={isLoading} streamingContent={streamingContent} />
       )}
 
       <ChatInput onSend={handleSend} disabled={isLoading} />
